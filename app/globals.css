@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/* Light mode colors */
+:root {
+  --primary: #2D6A4F;
+  --primary-hover: #1B4332;
+  --primary-light: #40916C;
+  --accent: #52B788;
+  --muted: #74C69D;
+
+  --background: #F8FAF9;
+  --surface: #FFFFFF;
+  --surface-muted: #EEF4F1;
+
+  --text-primary: #1A2E22;
+  --text-muted: #5C7A6B;
+
+  --border: #D4E6DC;
+
+  --success: #52B788;
+  --warning: #F0A500;
+  --error: #D64045;
+}
+
+/* Dark mode colors */
+[data-theme="dark"] {
+  --primary: #52B788;
+  --primary-hover: #74C69D;
+  --primary-light: #40916C;
+  --accent: #52B788;
+  --muted: #74C69D;
+
+  --background: #0F1A14;
+  --surface: #1A2E22;
+  --surface-muted: #243B2E;
+
+  --text-primary: #E8F5EE;
+  --text-muted: #8FB5A0;
+
+  --border: #2D4A38;
+
+  --success: #52B788;
+  --warning: #F0A500;
+  --error: #D64045;
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+
+  --color-border: var(--border);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  transition: background-color 200ms, border-color 200ms, color 200ms;
+}
+
+body {
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-hover);
+}

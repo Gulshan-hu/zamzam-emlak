@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  phone     String?
+  name      String
+  avatar    String?
+  role      UserRole @default(USER)
+  agencyId  String?
+  isBlocked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  agency         Agency?          @relation(fields: [agencyId], references: [id])
+  listings       Listing[]
+  savedListings  SavedListing[]
+  aiSearchRequests AISearchRequest[]
+
+  @@index([email])
+  @@index([agencyId])
+}
+
+model Agency {
+  id          String   @id @default(uuid())
+  name        String
+  logo        String?
+  description String?
+  address     String?
+  phone       String?
+  email       String?
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  users    User[]
+  listings Listing[]
+  packages AgencyPackage[]
+
+  @@index([isVerified])
+}
+
+model AgencyPackage {
+  id           String   @id @default(uuid())
+  agencyId     String
+  name         String
+  listingQuota Int
+  usedQuota    Int      @default(0)
+  priceAZN     Float
+  validUntil   DateTime
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
+  @@index([isActive])
+}
+
+model Listing {
+  id              String         @id @default(uuid())
+  slug            String         @unique
+  title           String
+  description     String
+  price           Float
+  area            Float
+  rooms           Int?
+  floor           Int?
+  totalFloors     Int?
+  address         String
+  district        String?
+  city            String
+  lat             Float?
+  lng             Float?
+  phone           String?
+  email           String?
+  type            ListingType
+  category        ListingCategory
+  status          ListingStatus  @default(PENDING)
+  publishedAt     DateTime?
+  rejectionReason String?
+  isFeatured      Boolean        @default(false)
+  views           Int            @default(0)
+  userId          String
+  agencyId        String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency        Agency?         @relation(fields: [agencyId], references: [id])
+  images        ListingImage[]
+  savedBy       SavedListing[]
+  aiAnalysis    AIAnalysis?
+
+  @@index([userId])
+  @@index([agencyId])
+  @@index([status])
+  @@index([type])
+  @@index([category])
+  @@index([city])
+  @@index([createdAt])
+  @@index([slug])
+  @@index([isFeatured])
+  @@index([publishedAt])
+}
+
+model ListingImage {
+  id        String @id @default(uuid())
+  listingId String
+  url       String
+  order     Int
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+model SavedListing {
+  id        String   @id @default(uuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
+}
+
+model AIAnalysis {
+  id               String   @id @default(uuid())
+  listingId        String   @unique
+  rentalYield      Float?
+  paybackYears     Float?
+  marketComparison String?
+  liquidityScore   Float?
+  summary          String
+  recommendation   String
+  createdAt        DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+model AISearchRequest {
+  id          String              @id @default(uuid())
+  userId      String
+  imageUrl    String?
+  description String?
+  address     String?
+  status      AISearchStatus      @default(PENDING)
+  createdAt   DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum UserRole {
+  ADMIN
+  AGENCY_OWNER
+  AGENT
+  USER
+}
+
+enum ListingType {
+  SALE
+  RENT
+}
+
+enum ListingCategory {
+  APARTMENT
+  HOUSE
+  LAND
+  COMMERCIAL
+}
+
+enum ListingStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+}
+
+enum AISearchStatus {
+  PENDING
+  COMPLETED
+}
