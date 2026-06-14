@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ZamZam Əmlak - Real Estate Platform
+
+AI-powered real estate platform for Azerbaijan built with Next.js, Supabase, Prisma, and TypeScript.
+
+## Features
+
+- 🎨 **Modern Design System** - Green color theme with dark mode support
+- 🌐 **Multi-language** - Azerbaijani (default), Russian, English
+- 🎯 **Component Library** - 8+ reusable UI components
+- 🏗️ **Clean Architecture** - Repository → Service → Actions pattern
+- 📱 **Responsive** - Mobile-first design with Tailwind CSS v4
+- 🔐 **Type-Safe** - TypeScript strict mode
+- 🗄️ **Database** - PostgreSQL with Prisma ORM
+- ⚡ **Fast** - Next.js 16 with Turbopack
+
+## Tech Stack
+
+- **Framework**: Next.js 16.2.9 (App Router)
+- **Language**: TypeScript (strict mode)
+- **Database**: PostgreSQL + Prisma ORM
+- **Auth & Storage**: Supabase
+- **Styling**: Tailwind CSS v4
+- **State Management**: TanStack Query
+- **Validation**: Zod
+- **Icons**: Lucide React
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- npm or yarn
+- PostgreSQL database
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/Gulshan-hu/zamzam-emlak.git
+cd zamzam-emlak
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.local.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Edit `.env` and add your:
+- Supabase credentials
+- Database connection string
+- Anthropic API key (for AI features)
 
-## Learn More
+4. Generate Prisma client:
+```bash
+npx prisma generate
+```
 
-To learn more about Next.js, take a look at the following resources:
+5. Run the development server:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+zamzam-emlak/
+├── app/                      # Next.js App Router
+├── components/               # Shared components
+│   ├── providers/           # Context providers
+│   └── ui/                  # UI component library
+├── features/                # Feature modules
+│   ├── listings/
+│   ├── agencies/
+│   ├── users/
+│   └── ai-search/
+├── lib/                     # Core library
+│   ├── actions/            # Server actions
+│   ├── repositories/       # Data access layer
+│   ├── services/           # Business logic
+│   ├── validation/         # Zod schemas
+│   ├── i18n/              # Translations
+│   └── types/             # TypeScript types
+└── prisma/                 # Database schema
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Available Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## Documentation
+
+- [Architecture Guide](ARCHITECTURE.md) - Project architecture and patterns
+- [Language System](LANGUAGE_SYSTEM.md) - Multi-language implementation
+- [Project Audit](PROJECT_AUDIT.md) - Code quality and health report
+
+## Color Theme
+
+- Primary: `#2D6A4F` (Deep Green)
+- Accent: `#52B788` (Medium Green)
+- Background Light: `#F8FAF9`
+- Background Dark: `#0F1A14`
+
+## Contributing
+
+Contributions are welcome! Please read the architecture guide before submitting PRs.
+
+## License
+
+This project is private and proprietary.
+
+---
+
+Built with ❤️ for Azerbaijan's real estate market
