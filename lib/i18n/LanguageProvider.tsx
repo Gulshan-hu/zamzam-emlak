@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { Locale, defaultLocale } from "./config";
 import { translations, TranslationKeys } from "./translations";
 
@@ -28,8 +28,17 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLocaleState(newLocale);
     if (typeof window !== "undefined") {
       localStorage.setItem("zamzam-locale", newLocale);
+      // Also set cookie for SSR compatibility
+      document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
     }
   };
+
+  // Update HTML lang attribute when locale changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      document.documentElement.lang = locale;
+    }
+  }, [locale]);
 
   const t = (key: TranslationKeys): string => {
     return translations[locale][key] || translations[defaultLocale][key] || key;

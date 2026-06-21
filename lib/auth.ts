@@ -120,6 +120,37 @@ export async function signUp(
 }
 
 /**
+ * Sign in with OAuth provider (Google)
+ */
+export async function signInWithOAuth(provider: 'google'): Promise<AuthResponse> {
+  try {
+    const supabase = createClient()
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) {
+      return {
+        success: false,
+        error: { message: error.message, code: error.code },
+      }
+    }
+
+    return { success: true, data: undefined }
+  } catch (err) {
+    console.error('OAuth sign in error:', err)
+    return {
+      success: false,
+      error: { message: 'An unexpected error occurred. Please try again.' },
+    }
+  }
+}
+
+/**
  * Sign out the current user
  */
 export async function signOut(): Promise<AuthResponse> {

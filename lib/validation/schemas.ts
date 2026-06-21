@@ -15,7 +15,7 @@ export const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 })
 
-export const createListingSchema = z.object({
+const baseListingSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters').max(200),
   description: z.string().min(50, 'Description must be at least 50 characters').max(5000),
   price: z.number().positive('Price must be positive'),
@@ -34,7 +34,20 @@ export const createListingSchema = z.object({
   category: listingCategorySchema,
 })
 
-export const updateListingSchema = createListingSchema.partial()
+export const createListingSchema = baseListingSchema.refine(
+  (data) => {
+    if (data.floor !== null && data.floor !== undefined && data.totalFloors !== null && data.totalFloors !== undefined) {
+      return data.floor <= data.totalFloors;
+    }
+    return true;
+  },
+  {
+    message: 'Floor must be less than or equal to total floors',
+    path: ['floor'],
+  }
+)
+
+export const updateListingSchema = baseListingSchema.partial()
 
 export const listingFiltersSchema = z.object({
   status: listingStatusSchema.optional(),
@@ -52,7 +65,29 @@ export const listingFiltersSchema = z.object({
   rooms: z.coerce.number().int().positive().optional(),
   sortBy: z.enum(['createdAt', 'price', 'area', 'views', 'publishedAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
-})
+}).refine(
+  (data) => {
+    if (data.minPrice !== undefined && data.maxPrice !== undefined) {
+      return data.minPrice <= data.maxPrice;
+    }
+    return true;
+  },
+  {
+    message: 'Min price must be less than or equal to max price',
+    path: ['maxPrice'],
+  }
+).refine(
+  (data) => {
+    if (data.minArea !== undefined && data.maxArea !== undefined) {
+      return data.minArea <= data.maxArea;
+    }
+    return true;
+  },
+  {
+    message: 'Min area must be less than or equal to max area',
+    path: ['maxArea'],
+  }
+)
 
 export const createAgencySchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters').max(100),

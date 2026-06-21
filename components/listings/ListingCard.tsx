@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import type { Listing, Agency, ListingImage } from "@/lib/types";
 
-type ListingCardData = Listing & {
+export type ListingCardData = Listing & {
   agency?: Agency | null;
   images: ListingImage[];
 };
@@ -113,7 +113,7 @@ export function ListingCard({ listing }: ListingCardProps) {
               Baxış
             </Button>
           </Link>
-          <Link href={`/ai-analysis/${listing.slug}`} className="flex-1">
+          <Link href={`/listings/${listing.slug}#ai-analysis`} className="flex-1">
             <Button variant="secondary" className="w-full">
               AI Analiz
             </Button>

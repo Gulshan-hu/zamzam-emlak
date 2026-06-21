@@ -1,62 +1,81 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { CreateListingForm } from "@/components/listings/CreateListingForm";
+import { getServerUser } from "@/lib/auth-server";
+import { prisma } from "@/lib/prisma";
 
 async function CreateListingContent() {
-  // TODO: Replace with actual auth when Supabase is configured
-  // const session = await auth();
-  // if (!session) {
-  //   redirect("/auth/login?redirect=/listings/new");
-  // }
+  const user = await getServerUser();
 
-  // Mock: Show placeholder until auth is configured
+  if (!user) {
+    redirect("/auth/login?redirect=/listings/new");
+  }
+
+  // Fetch user data from database to get role and agencyId
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: {
+      id: true,
+      role: true,
+      agencyId: true,
+      isBlocked: true,
+    },
+  });
+
+  if (!dbUser) {
+    redirect("/auth/login?redirect=/listings/new");
+  }
+
+  if (dbUser.isBlocked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <h1 className="text-2xl font-bold text-text-primary">
+            Hesabınız bloklanıb
+          </h1>
+          <p className="mt-4 text-text-muted">
+            Əlaqə üçün dəstək komandası ilə əlaqə saxlayın.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only ADMIN, AGENCY_OWNER, and AGENT can create listings
+  if (dbUser.role === "USER") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <h1 className="text-2xl font-bold text-text-primary">
+            İcazə yoxdur
+          </h1>
+          <p className="mt-4 text-text-muted">
+            Elan yaratmaq üçün agentlik hesabı yaratmalısınız.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-2xl font-bold text-text-primary">
-          Elan yaratma səhifəsi hazırlanır
-        </h1>
-        <p className="mt-4 text-text-muted">
-          Supabase Auth konfiqurasiyası tamamlandıqdan sonra elan yaratma formu
-          aktiv olacaq.
-        </p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-text-primary">
+            Yeni Elan Yarat
+          </h1>
+          <p className="mt-2 text-text-muted">
+            Əmlak elanınızı yaratmaq üçün formu doldurun
+          </p>
+        </div>
+        <CreateListingForm
+          userId={dbUser.id}
+          userRole={dbUser.role}
+          agencyId={dbUser.agencyId}
+        />
       </div>
     </div>
   );
-
-  // The code below will be used when auth is configured
-  // const user = session.user;
-
-  // // Check if user has permission to create listings
-  // if (user.role === "USER") {
-  //   return (
-  //     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-  //       <div className="max-w-md text-center">
-  //         <h1 className="text-2xl font-bold text-text-primary">
-  //           İcazə yoxdur
-  //         </h1>
-  //         <p className="mt-4 text-text-muted">
-  //           Elan yaratmaq üçün agentlik hesabı yaratmalısınız.
-  //         </p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  // return (
-  //   <div className="container mx-auto px-4 py-8">
-  //     <div className="mx-auto max-w-4xl">
-  //       <div className="mb-8">
-  //         <h1 className="text-3xl font-bold text-text-primary">
-  //           Yeni Elan Yarat
-  //         </h1>
-  //         <p className="mt-2 text-text-muted">
-  //           Əmlak elanınızı yaratmaq üçün formu doldurun
-  //         </p>
-  //       </div>
-  //       <CreateListingForm userId={user.id} userRole={user.role} agencyId={user.agencyId} />
-  //     </div>
-  //   </div>
-  // );
 }
 
 export default function CreateListingPage() {

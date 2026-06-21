@@ -7,10 +7,13 @@ import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
-import { signUp, validatePassword, formatPhoneNumber, validatePhoneNumber } from "@/lib/auth";
+import { signUp, signInWithOAuth, validatePassword, formatPhoneNumber, validatePhoneNumber } from "@/lib/auth";
+import { GoogleIcon, AppleIcon } from "@/components/icons/SocialIcons";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -45,23 +48,23 @@ export default function RegisterPage() {
 
     // Name validation
     if (!formData.name.trim()) {
-      newErrors.name = "Ad və soyad tələb olunur";
+      newErrors.name = t("nameRequired");
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = "Ad və soyad ən azı 2 simvol olmalıdır";
+      newErrors.name = t("nameTooShort");
     }
 
     // Email validation
     if (!formData.email) {
-      newErrors.email = "Email tələb olunur";
+      newErrors.email = t("fieldRequired");
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Email formatı düzgün deyil";
+      newErrors.email = t("emailInvalid");
     }
 
     // Phone validation
     if (!formData.phone) {
-      newErrors.phone = "Telefon nömrəsi tələb olunur";
+      newErrors.phone = t("phoneRequired");
     } else if (!validatePhoneNumber(formData.phone)) {
-      newErrors.phone = "Telefon nömrəsi düzgün deyil (+994XXXXXXXXX)";
+      newErrors.phone = t("phoneFormat");
     }
 
     // Password validation
@@ -72,14 +75,14 @@ export default function RegisterPage() {
 
     // Confirm password validation
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Şifrə təkrarı tələb olunur";
+      newErrors.confirmPassword = t("fieldRequired");
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Şifrələr uyğun gəlmir";
+      newErrors.confirmPassword = t("passwordsNotMatch");
     }
 
     // Terms validation
     if (!agreeToTerms) {
-      newErrors.terms = "İstifadə şərtlərini qəbul etməlisiniz";
+      newErrors.terms = t("termsRequired");
     }
 
     setErrors(newErrors);
@@ -112,10 +115,31 @@ export default function RegisterPage() {
         return;
       }
 
-      // Success - redirect to login with success message
-      router.push("/auth/login?registered=true");
+      // Success - redirect to email confirmation page
+      router.push(`/auth/confirm-email?email=${encodeURIComponent(formData.email)}`);
     } catch (err) {
       console.error("Registration error:", err);
+      setErrors({
+        general: "Gözlənilməz xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.",
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const handleOAuthSignIn = async (provider: 'google') => {
+    setErrors({});
+    setIsLoading(true);
+
+    try {
+      const result = await signInWithOAuth(provider);
+
+      if (!result.success) {
+        setErrors({ general: result.error.message });
+        setIsLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error("OAuth sign in error:", err);
       setErrors({
         general: "Gözlənilməz xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.",
       });
@@ -139,11 +163,11 @@ export default function RegisterPage() {
   const getStrengthText = () => {
     switch (passwordStrength.strength) {
       case "strong":
-        return "Güclü";
+        return t("strong");
       case "medium":
-        return "Orta";
+        return t("medium");
       case "weak":
-        return "Zəif";
+        return t("weak");
       default:
         return "";
     }
@@ -156,10 +180,10 @@ export default function RegisterPage() {
           {/* Header */}
           <div className="text-center">
             <h1 className="text-2xl font-bold text-text-primary">
-              Qeydiyyat
+              {t("registerTitle")}
             </h1>
             <p className="mt-2 text-sm text-text-muted">
-              Hesab yaratmaq üçün məlumatlarınızı daxil edin
+              {t("registerSubtitle")}
             </p>
           </div>
 
@@ -175,8 +199,8 @@ export default function RegisterPage() {
             {/* Full Name */}
             <Input
               type="text"
-              label="Ad və Soyad"
-              placeholder="Adınız Soyadınız"
+              label={t("name")}
+              placeholder={t("name")}
               value={formData.name}
               onChange={(e) => handleChange("name", e.target.value)}
               error={errors.name}
@@ -187,7 +211,7 @@ export default function RegisterPage() {
             {/* Email */}
             <Input
               type="email"
-              label="Email"
+              label={t("email")}
               placeholder="example@email.com"
               value={formData.email}
               onChange={(e) => handleChange("email", e.target.value)}
@@ -200,7 +224,7 @@ export default function RegisterPage() {
             <div>
               <Input
                 type="tel"
-                label="Telefon"
+                label={t("phone")}
                 placeholder="+994 XX XXX XX XX"
                 value={formData.phone}
                 onChange={(e) => handleChange("phone", e.target.value)}
@@ -218,7 +242,7 @@ export default function RegisterPage() {
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  label="Şifrə"
+                  label={t("password")}
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => handleChange("password", e.target.value)}
@@ -268,7 +292,7 @@ export default function RegisterPage() {
                   </div>
                   {formData.password && (
                     <p className="text-xs text-text-muted">
-                      Güc: <span className="font-medium">{getStrengthText()}</span>
+                      {t("passwordStrength")}: <span className="font-medium">{getStrengthText()}</span>
                     </p>
                   )}
                 </div>
@@ -276,13 +300,13 @@ export default function RegisterPage() {
 
               <ul className="mt-2 space-y-1 text-xs text-text-muted">
                 <li className={formData.password.length >= 8 ? "text-success" : ""}>
-                  • Ən azı 8 simvol
+                  • {t("passwordMinLength")}
                 </li>
                 <li className={/[A-Z]/.test(formData.password) ? "text-success" : ""}>
-                  • Ən azı 1 böyük hərf
+                  • {t("passwordUppercase")}
                 </li>
                 <li className={/\d/.test(formData.password) ? "text-success" : ""}>
-                  • Ən azı 1 rəqəm
+                  • {t("passwordNumber")}
                 </li>
               </ul>
             </div>
@@ -291,7 +315,7 @@ export default function RegisterPage() {
             <div className="relative">
               <Input
                 type={showConfirmPassword ? "text" : "password"}
-                label="Şifrə təkrarı"
+                label={t("confirmPassword")}
                 placeholder="••••••••"
                 value={formData.confirmPassword}
                 onChange={(e) => handleChange("confirmPassword", e.target.value)}
@@ -330,16 +354,16 @@ export default function RegisterPage() {
                     href="/terms"
                     className="text-primary transition-colors hover:text-primary-hover"
                   >
-                    İstifadə şərtləri
+                    {t("terms")}
                   </Link>{" "}
-                  və{" "}
+                  {t("orContinueWith")}{" "}
                   <Link
                     href="/privacy"
                     className="text-primary transition-colors hover:text-primary-hover"
                   >
-                    Məxfilik siyasəti
+                    {t("privacy")}
                   </Link>
-                  ni oxudum və qəbul edirəm
+                  {" "}{t("agreeToTerms")}
                 </span>
               </label>
               {errors.terms && (
@@ -357,25 +381,62 @@ export default function RegisterPage() {
               {isLoading ? (
                 <>
                   <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  Qeydiyyat edilir...
+                  {t("registering")}
                 </>
               ) : (
                 <>
                   <UserPlus className="mr-2 h-5 w-5" />
-                  Qeydiyyatdan keç
+                  {t("register")}
                 </>
               )}
             </Button>
           </form>
 
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-surface px-2 text-text-muted">{t("orContinueWith")}</span>
+            </div>
+          </div>
+
+          {/* OAuth Buttons */}
+          <div className="space-y-3">
+            {/* Google Sign In */}
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={() => handleOAuthSignIn('google')}
+              disabled={isLoading}
+            >
+              <GoogleIcon className="mr-2 h-5 w-5" />
+              {t("registerWithGoogle")}
+            </Button>
+
+            {/* Apple Sign In - Disabled */}
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full opacity-50 cursor-not-allowed"
+              disabled
+            >
+              <AppleIcon className="mr-2 h-5 w-5" />
+              {t("registerWithApple")}
+              <span className="ml-2 text-xs">({t("comingSoon")})</span>
+            </Button>
+          </div>
+
           {/* Login Link */}
           <div className="text-center text-sm text-text-muted">
-            Artıq hesabınız var?{" "}
+            {t("alreadyHaveAccount")}{" "}
             <Link
               href="/auth/login"
               className="font-medium text-primary transition-colors hover:text-primary-hover"
             >
-              Daxil olun
+              {t("login")}
             </Link>
           </div>
         </div>

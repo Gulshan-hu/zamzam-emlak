@@ -7,6 +7,7 @@ import { House, Menu, X, User, LogOut, LayoutDashboard, Home as HomeIcon, Buildi
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { Button } from "@/components/ui/Button";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 // Mock auth state - will be replaced with real auth
 type UserType = { name: string; avatar: string | null } | null;
@@ -15,20 +16,21 @@ const MOCK_USER: UserType = null; // Set to { name: "User", avatar: null } to te
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { t } = useLanguage();
   const user = MOCK_USER;
 
   const navLinks = [
-    { href: "/", label: "Ana Səhifə", icon: HomeIcon },
-    { href: "/listings", label: "Elanlar", icon: Building2 },
-    { href: "/map", label: "Xəritə", icon: Map },
-    { href: "/ai-search", label: "AI Axtarış", icon: Sparkles },
-    { href: "/ai-analysis", label: "AI Analiz", icon: BarChart3 },
+    { href: "/", label: t("home"), icon: HomeIcon },
+    { href: "/listings", label: t("listings"), icon: Building2 },
+    { href: "/map", label: t("map"), icon: Map },
+    { href: "/ai-search", label: t("aiSearch"), icon: Sparkles },
+    { href: "/ai-analysis", label: t("aiAnalysis"), icon: BarChart3 },
   ];
 
   const userMenuItems = [
-    { href: "/dashboard", label: "İdarə Paneli", icon: LayoutDashboard },
-    { href: "/my-listings", label: "Mənim Elanlarım", icon: Building2 },
-    { href: "/messages", label: "Mesajlar", icon: HomeIcon },
+    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
+    { href: "/my-listings", label: t("myListings"), icon: Building2 },
+    { href: "/messages", label: t("messages"), icon: HomeIcon },
   ];
 
   return (
@@ -37,7 +39,7 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <House className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold text-primary">ZamZam Əmlak</span>
+          <span className="text-xl font-bold text-primary">{t("siteTitle")}</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -101,7 +103,7 @@ export function Header() {
                       }}
                     >
                       <LogOut className="h-4 w-4" />
-                      Çıxış
+                      {t("logout")}
                     </button>
                   </div>
                 </div>
@@ -109,12 +111,16 @@ export function Header() {
             </div>
           ) : (
             <div className="hidden items-center gap-2 md:flex">
-              <Button variant="ghost" size="sm">
-                Daxil ol
-              </Button>
-              <Button variant="primary" size="sm">
-                Qeydiyyat
-              </Button>
+              <Link href="/auth/login">
+                <Button variant="ghost" size="sm">
+                  {t("login")}
+                </Button>
+              </Link>
+              <Link href="/auth/register">
+                <Button variant="primary" size="sm">
+                  {t("register")}
+                </Button>
+              </Link>
             </div>
           )}
 
@@ -138,7 +144,7 @@ export function Header() {
           >
             {/* Mobile Language Toggle */}
             <div className="mb-6 flex items-center justify-between">
-              <span className="text-sm font-medium text-text-muted">Dil seçin</span>
+              <span className="text-sm font-medium text-text-muted">{t("siteTitle")}</span>
               <LanguageToggle />
             </div>
 
@@ -160,12 +166,16 @@ export function Header() {
             {/* Mobile Auth Buttons */}
             {!user && (
               <div className="mt-6 space-y-2">
-                <Button variant="ghost" className="w-full">
-                  Daxil ol
-                </Button>
-                <Button variant="primary" className="w-full">
-                  Qeydiyyat
-                </Button>
+                <Link href="/auth/login" className="block">
+                  <Button variant="ghost" className="w-full">
+                    {t("login")}
+                  </Button>
+                </Link>
+                <Link href="/auth/register" className="block">
+                  <Button variant="primary" className="w-full">
+                    {t("register")}
+                  </Button>
+                </Link>
               </div>
             )}
 
@@ -191,7 +201,7 @@ export function Header() {
                   }}
                 >
                   <LogOut className="h-4 w-4" />
-                  Çıxış
+                  {t("logout")}
                 </button>
               </div>
             )}

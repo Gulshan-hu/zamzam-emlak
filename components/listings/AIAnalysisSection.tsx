@@ -20,7 +20,7 @@ type MockAIAnalysis = {
   summary: string;
 };
 
-export function AIAnalysisSection({ listingId }: AIAnalysisSectionProps) {
+export function AIAnalysisSection({ listingId: _listingId }: AIAnalysisSectionProps) {
   const [analysis, setAnalysis] = useState<MockAIAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function AIAnalysisSection({ listingId }: AIAnalysisSectionProps) {
     setError(null);
 
     try {
-      // TODO: Replace with actual API call to /api/ai/analyze
+      // TODO: Replace with actual API call to /api/ai/analyze when ANTHROPIC_API_KEY is available
       // const response = await fetch(`/api/ai/analyze/${listingId}`);
       // const data = await response.json();
 

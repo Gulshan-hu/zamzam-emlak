@@ -1,7 +1,7 @@
 import { HTMLAttributes, forwardRef } from "react";
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  variant?: "green" | "blue" | "gray" | "red";
+  variant?: "green" | "blue" | "gray" | "red" | "yellow";
 }
 
 const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
@@ -11,6 +11,7 @@ const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
       blue: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
       gray: "bg-surface-muted text-text-muted border-border",
       red: "bg-error/10 text-error border-error/20",
+      yellow: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20 dark:text-yellow-400",
     };
 
     return (

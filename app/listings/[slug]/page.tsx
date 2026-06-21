@@ -24,37 +24,86 @@ type ListingDetailPageProps = {
 };
 
 async function ListingContent({ slug }: { slug: string }) {
-  // TODO: Replace with actual database query when DATABASE_URL is configured
-  // const result = await getListingBySlugAction(slug);
-  // if (!result.success) {
-  //   notFound();
-  // }
-  // const listing = result.data as ListingWithRelations;
+  const result = await getListingBySlugAction(slug);
 
-  // Mock: Show message since we don't have database yet
+  if (!result.success) {
+    notFound();
+  }
+
+  const listing = result.data as ListingWithRelations;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-2xl font-bold text-text-primary">
-          Elan səhifəsi hazırlanır
-        </h1>
-        <p className="mt-4 text-text-muted">
-          Database konfiqurasiyası tamamlandıqdan sonra elanların detalları
-          göstəriləcək.
-        </p>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        {/* Image Gallery */}
+        <div className="mb-8">
+          <ImageGallery images={listing.images} title={listing.title} />
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Main Content */}
+          <div className="space-y-8 lg:col-span-2">
+            {/* Title and Price */}
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <Badge variant={listing.type === "SALE" ? "green" : "blue"}>
+                  {listing.type === "SALE" ? "Satış" : "Kirayə"}
+                </Badge>
+                {listing.isFeatured && (
+                  <Badge variant="yellow">Premium</Badge>
+                )}
+              </div>
+              <h1 className="text-3xl font-bold text-text-primary">
+                {listing.title}
+              </h1>
+              <div className="mt-4 text-4xl font-bold text-primary">
+                {new Intl.NumberFormat("az-AZ").format(listing.price)} ₼
+              </div>
+            </div>
+
+            {/* Listing Details */}
+            <ListingDetails listing={listing} />
+
+            {/* Description */}
+            <div className="rounded-2xl border border-border bg-surface p-6">
+              <h2 className="mb-4 text-xl font-semibold text-text-primary">
+                Təsvir
+              </h2>
+              <p className="whitespace-pre-line text-text-muted">
+                {listing.description}
+              </p>
+            </div>
+
+            {/* Map */}
+            {listing.lat && listing.lng && (
+              <MapView lat={listing.lat} lng={listing.lng} address={listing.address} />
+            )}
+
+            {/* AI Analysis */}
+            <AIAnalysisSection listingId={listing.id} />
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <SaveListingButton listingId={listing.id} />
+            </div>
+
+            {/* Contact Card */}
+            <ContactCard
+              phone={listing.phone}
+              email={listing.email}
+              listingTitle={listing.title}
+            />
+
+            {/* Seller Card */}
+            <SellerCard user={listing.user} agency={listing.agency} />
+          </div>
+        </div>
       </div>
     </div>
   );
-
-  // The code below will be used when database is configured
-  // return (
-  //   <div className="min-h-screen bg-background">
-  //     <div className="container mx-auto px-4 py-8">
-  //       <ImageGallery images={listing.images} title={listing.title} />
-  //       ...
-  //     </div>
-  //   </div>
-  // );
 }
 
 export default async function ListingDetailPage({

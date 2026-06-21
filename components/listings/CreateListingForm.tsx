@@ -101,9 +101,9 @@ const STEPS = [
 ];
 
 export function CreateListingForm({
-  userId,
-  userRole,
-  agencyId,
+  userId: _userId,
+  userRole: _userRole,
+  agencyId: _agencyId,
 }: CreateListingFormProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
@@ -154,6 +154,14 @@ export function CreateListingForm({
           setError("Düzgün sahə daxil edin");
           return false;
         }
+        if (formData.floor && formData.totalFloors) {
+          const floor = parseInt(formData.floor);
+          const totalFloors = parseInt(formData.totalFloors);
+          if (floor > totalFloors) {
+            setError("Mərtəbə ümumi mərtəbədən böyük ola bilməz");
+            return false;
+          }
+        }
         return true;
 
       case 3:
@@ -197,43 +205,51 @@ export function CreateListingForm({
     setError(null);
 
     try {
-      // TODO: Upload images to Supabase Storage
-      // const imageUrls = await Promise.all(
-      //   images.map(async (file) => {
-      //     const formData = new FormData();
-      //     formData.append("file", file);
-      //     const response = await fetch("/api/upload", {
-      //       method: "POST",
-      //       body: formData,
-      //     });
-      //     const data = await response.json();
-      //     return data.url;
-      //   })
-      // );
+      // Upload images to Supabase Storage
+      const imageUrls = await Promise.all(
+        images.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
 
-      // TODO: Create listing via API
-      // const response = await fetch("/api/listings", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({
-      //     ...formData,
-      //     price: parseFloat(formData.price),
-      //     area: parseFloat(formData.area),
-      //     rooms: formData.rooms ? parseInt(formData.rooms) : null,
-      //     floor: formData.floor ? parseInt(formData.floor) : null,
-      //     totalFloors: formData.totalFloors ? parseInt(formData.totalFloors) : null,
-      //     images: imageUrls,
-      //   }),
-      // });
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Failed to upload image");
+          }
 
-      // Mock success
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+          const data = await response.json();
+          return data.url;
+        })
+      );
 
-      // Redirect to listings page or dashboard
-      router.push("/listings");
+      // Create listing with uploaded image URLs
+      const response = await fetch("/api/listings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          price: parseFloat(formData.price),
+          area: parseFloat(formData.area),
+          rooms: formData.rooms ? parseInt(formData.rooms) : null,
+          floor: formData.floor ? parseInt(formData.floor) : null,
+          totalFloors: formData.totalFloors ? parseInt(formData.totalFloors) : null,
+          images: imageUrls,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create listing");
+      }
+
+      // Redirect to listings page
+      router.push("/listings?success=created");
     } catch (err) {
       console.error("Failed to create listing:", err);
-      setError("Elan yaradılarkən xəta baş verdi. Yenidən cəhd edin.");
+      setError(err instanceof Error ? err.message : "Elan yaradılarkən xəta baş verdi. Yenidən cəhd edin.");
     } finally {
       setIsSubmitting(false);
     }

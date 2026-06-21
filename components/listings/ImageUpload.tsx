@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Image from "next/image";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 type ImageUploadProps = {
@@ -23,20 +23,53 @@ export function ImageUpload({
     (files: FileList | null) => {
       if (!files) return;
 
-      const newFiles = Array.from(files).filter((file) =>
-        file.type.startsWith("image/")
-      );
+      const newFiles = Array.from(files).filter((file) => {
+        // Validate MIME type
+        if (!file.type.startsWith("image/")) {
+          alert(`${file.name} şəkil faylı deyil`);
+          return false;
+        }
+
+        // Validate allowed types (jpg, png, webp)
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          alert(`${file.name} yalnız JPG, PNG və WebP faylları qəbul edilir`);
+          return false;
+        }
+
+        // Validate file size (max 5MB)
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+          alert(`${file.name} 5MB-dan böyükdür`);
+          return false;
+        }
+
+        return true;
+      });
 
       if (images.length + newFiles.length > maxImages) {
         alert(`Maksimum ${maxImages} şəkil yükləyə bilərsiniz`);
         return;
       }
 
-      const updatedImages = [...images, ...newFiles];
+      // Check for duplicate files (by name and size)
+      const existingFiles = new Set(images.map(img => `${img.name}-${img.size}`));
+      const uniqueNewFiles = newFiles.filter(file => {
+        const key = `${file.name}-${file.size}`;
+        if (existingFiles.has(key)) {
+          alert(`${file.name} artıq əlavə edilib`);
+          return false;
+        }
+        return true;
+      });
+
+      if (uniqueNewFiles.length === 0) return;
+
+      const updatedImages = [...images, ...uniqueNewFiles];
       onChange(updatedImages);
 
       // Generate previews
-      newFiles.forEach((file) => {
+      uniqueNewFiles.forEach((file) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           setPreviews((prev) => [...prev, reader.result as string]);

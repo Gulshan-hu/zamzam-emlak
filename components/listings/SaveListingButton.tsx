@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
+import { saveListingAction, unsaveListingAction, checkListingSavedAction } from "@/lib/actions/saved-listing.actions";
+import { getCurrentUser } from "@/lib/auth";
 
 type SaveListingButtonProps = {
   listingId: string;
@@ -10,16 +12,49 @@ type SaveListingButtonProps = {
 export function SaveListingButton({ listingId }: SaveListingButtonProps) {
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // TODO: Implement actual save/unsave functionality with authentication
+  useEffect(() => {
+    async function checkAuth() {
+      const user = await getCurrentUser();
+      if (user) {
+        setUserId(user.id);
+        // Check if listing is already saved
+        const result = await checkListingSavedAction(user.id, listingId);
+        if (result.success) {
+          setIsSaved(result.data);
+        }
+      }
+    }
+    checkAuth();
+  }, [listingId]);
+
   const handleToggleSave = async () => {
+    if (!userId) {
+      // Redirect to login if not authenticated
+      window.location.href = `/auth/login?redirect=/listings/${listingId}`;
+      return;
+    }
+
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    setIsSaved(!isSaved);
-    setIsLoading(false);
+    try {
+      if (isSaved) {
+        const result = await unsaveListingAction(userId, listingId);
+        if (result.success) {
+          setIsSaved(false);
+        }
+      } else {
+        const result = await saveListingAction(userId, listingId);
+        if (result.success) {
+          setIsSaved(true);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to toggle save:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

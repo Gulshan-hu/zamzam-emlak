@@ -1,16 +1,19 @@
 import { PrismaClient, Listing } from '@prisma/client'
 import { BaseService } from './base.service'
 import { ListingRepository, ListingFilters, ListingSortField } from '../repositories/listing.repository'
+import { AgencyPackageRepository } from '../repositories/agency-package.repository'
 import { NotFoundError, ValidationError } from '../errors'
 import type { PaginationParams, PaginatedResponse, SortOrder } from '../types'
 import type { CreateListingInput, UpdateListingInput } from '../validation/schemas'
 
 export class ListingService extends BaseService {
   private repository: ListingRepository
+  private agencyPackageRepository: AgencyPackageRepository
 
   constructor(prisma: PrismaClient) {
     super(prisma)
     this.repository = new ListingRepository(prisma)
+    this.agencyPackageRepository = new AgencyPackageRepository(prisma)
   }
 
   async createListing(
@@ -19,32 +22,80 @@ export class ListingService extends BaseService {
     agencyId?: string
   ): Promise<Listing> {
     try {
+      // Check agency quota if user is part of an agency
+      if (agencyId) {
+        const activePackage = await this.agencyPackageRepository.findActiveByAgencyId(agencyId)
+
+        if (!activePackage) {
+          throw new ValidationError('No active package found for this agency')
+        }
+
+        if (!activePackage.isActive) {
+          throw new ValidationError('Agency package is not active')
+        }
+
+        if (activePackage.validUntil < new Date()) {
+          throw new ValidationError('Agency package has expired')
+        }
+
+        if (activePackage.usedQuota >= activePackage.listingQuota) {
+          throw new ValidationError('Agency listing quota exhausted')
+        }
+      }
+
       const slug = await this.generateUniqueSlug(data.title)
 
-      const listing = await this.repository.create({
-        title: data.title,
-        description: data.description,
-        price: data.price,
-        area: data.area,
-        rooms: data.rooms ?? null,
-        floor: data.floor ?? null,
-        totalFloors: data.totalFloors ?? null,
-        address: data.address,
-        district: data.district ?? null,
-        city: data.city,
-        lat: data.lat ?? null,
-        lng: data.lng ?? null,
-        phone: data.phone ?? null,
-        email: data.email ?? null,
-        type: data.type,
-        category: data.category,
-        slug,
-        userId,
-        agencyId: agencyId || null,
-        status: 'PENDING',
-        publishedAt: null,
-        rejectionReason: null,
-        isFeatured: false,
+      // Use transaction to create listing and increment quota atomically
+      const listing = await this.executeInTransaction(async (tx) => {
+        const newListing = await tx.listing.create({
+          data: {
+            title: data.title,
+            description: data.description,
+            price: data.price,
+            area: data.area,
+            rooms: data.rooms ?? null,
+            floor: data.floor ?? null,
+            totalFloors: data.totalFloors ?? null,
+            address: data.address,
+            district: data.district ?? null,
+            city: data.city,
+            lat: data.lat ?? null,
+            lng: data.lng ?? null,
+            phone: data.phone ?? null,
+            email: data.email ?? null,
+            type: data.type,
+            category: data.category,
+            slug,
+            userId,
+            agencyId: agencyId || null,
+            status: 'PENDING',
+            publishedAt: null,
+            rejectionReason: null,
+            isFeatured: false,
+          },
+        })
+
+        // Increment agency quota if applicable
+        if (agencyId) {
+          const activePackage = await tx.agencyPackage.findFirst({
+            where: {
+              agencyId,
+              isActive: true,
+              validUntil: {
+                gt: new Date(),
+              },
+            },
+          })
+
+          if (activePackage) {
+            await tx.agencyPackage.update({
+              where: { id: activePackage.id },
+              data: { usedQuota: { increment: 1 } },
+            })
+          }
+        }
+
+        return newListing
       })
 
       return listing
@@ -134,7 +185,27 @@ export class ListingService extends BaseService {
         throw new ValidationError('You can only delete your own listings')
       }
 
-      await this.repository.delete(id)
+      // Use transaction to delete listing and decrement quota atomically
+      await this.executeInTransaction(async (tx) => {
+        await tx.listing.delete({ where: { id } })
+
+        // Decrement agency quota if applicable
+        if (listing.agencyId) {
+          const activePackage = await tx.agencyPackage.findFirst({
+            where: {
+              agencyId: listing.agencyId,
+              isActive: true,
+            },
+          })
+
+          if (activePackage && activePackage.usedQuota > 0) {
+            await tx.agencyPackage.update({
+              where: { id: activePackage.id },
+              data: { usedQuota: { decrement: 1 } },
+            })
+          }
+        }
+      })
     } catch (error) {
       this.handleError(error, 'ListingService.deleteListing')
     }

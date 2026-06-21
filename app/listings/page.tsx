@@ -1,17 +1,12 @@
 import { Suspense } from "react";
 import { getListingsAction } from "@/lib/actions/listing.actions";
-import { ListingCard } from "@/components/listings/ListingCard";
+import { ListingCard, ListingCardData } from "@/components/listings/ListingCard";
 import { ListingsFilters } from "@/components/listings/ListingsFilters";
 import { ListingsPagination } from "@/components/listings/ListingsPagination";
 import { ListingsSort } from "@/components/listings/ListingsSort";
 import { ActiveFilters } from "@/components/listings/ActiveFilters";
 import { ListingsLoading } from "@/components/listings/ListingsLoading";
-import type { Listing, ListingImage, Agency } from "@/lib/types";
-
-type ListingWithImages = Listing & {
-  images: ListingImage[];
-  agency?: Agency | null;
-};
+import { ListingsHeader, NoListingsMessage, ErrorMessage } from "@/components/listings/ListingsTranslated";
 
 type SearchParams = {
   page?: string;
@@ -60,35 +55,18 @@ async function ListingsContent({ searchParams }: ListingsPageProps) {
     | "publishedAt";
   const sortOrder = (searchParams.sortOrder || "desc") as "asc" | "desc";
 
-  // TODO: Replace with actual database query when DATABASE_URL is configured
-  // const result = await getListingsAction(filters, { page, limit: 12 });
+  const result = await getListingsAction(filters, { page, limit: 12 });
 
-  // Mock data for development
-  const result = {
-    success: true as const,
-    data: {
-      data: [] as ListingWithImages[],
-      meta: {
-        total: 0,
-        page: 1,
-        limit: 12,
-        totalPages: 0,
-      },
-    },
-  };
+  if (!result.success) {
+    return <ErrorMessage error={result.error} />;
+  }
 
-  // Remove error check since we're using mock data
   const listings = result.data.data;
   const meta = result.data.meta;
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-text-primary">Elanlar</h1>
-        <p className="mt-2 text-text-muted">
-          {meta.total} elan tapıldı
-        </p>
-      </div>
+      <ListingsHeader total={meta.total} />
 
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Filters Sidebar */}
@@ -106,21 +84,12 @@ async function ListingsContent({ searchParams }: ListingsPageProps) {
 
           {/* Listings Grid */}
           {listings.length === 0 ? (
-            <div className="flex min-h-[400px] items-center justify-center rounded-2xl border border-border bg-surface">
-              <div className="text-center">
-                <p className="text-lg font-medium text-text-primary">
-                  Elan tapılmadı
-                </p>
-                <p className="mt-2 text-sm text-text-muted">
-                  Axtarış filtrlərini dəyişdirərək yenidən cəhd edin
-                </p>
-              </div>
-            </div>
+            <NoListingsMessage />
           ) : (
             <>
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {listings.map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} />
+                  <ListingCard key={listing.id} listing={listing as ListingCardData} />
                 ))}
               </div>
 

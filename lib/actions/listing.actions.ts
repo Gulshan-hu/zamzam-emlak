@@ -103,7 +103,20 @@ export async function getListingsAction(
     return { success: true, data: result }
   } catch (err) {
     console.error('Failed to fetch listings:', err)
-    return { success: false, error: 'Failed to fetch listings' }
+
+    // Check if it's a database connection error
+    if (err && typeof err === 'object' && 'code' in err) {
+      const error = err as { code?: string; message?: string }
+      if (error.code === 'P1001' || error.code === 'P1000') {
+        return {
+          success: false,
+          error: 'Verilənlər bazası ilə əlaqə qurula bilmədi. Zəhmət olmasa bir az sonra yenidən cəhd edin.',
+          code: 'DATABASE_CONNECTION_ERROR'
+        }
+      }
+    }
+
+    return { success: false, error: 'Elanları yükləmək mümkün olmadı. Zəhmət olmasa yenidən cəhd edin.' }
   }
 }
 

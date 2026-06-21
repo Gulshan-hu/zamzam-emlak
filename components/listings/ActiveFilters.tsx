@@ -45,7 +45,7 @@ export function ActiveFilters({ filters }: ActiveFiltersProps) {
   const searchParams = useSearchParams();
 
   const activeFilters = Object.entries(filters).filter(
-    ([_, value]) => value !== undefined && value !== ""
+    ([, value]) => value !== undefined && value !== ""
   );
 
   if (activeFilters.length === 0) {

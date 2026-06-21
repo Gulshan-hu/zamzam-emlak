@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { MapPin, Search } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +10,7 @@ type MapPickerProps = {
   city: string;
   lat: number | null;
   lng: number | null;
-  onLocationChange: (lat: number, lng: number) => void;
+  onLocationChange: (lat: number | null, lng: number | null) => void;
 };
 
 export function MapPicker({
@@ -21,32 +21,136 @@ export function MapPicker({
   onLocationChange,
 }: MapPickerProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
 
-  // TODO: Implement actual Google Maps integration when API key is configured
-  const handleSearch = useCallback(() => {
-    // Mock geocoding - in production, use Google Maps Geocoding API
-    const mockLat = 40.4093 + Math.random() * 0.1;
-    const mockLng = 49.8671 + Math.random() * 0.1;
-    onLocationChange(mockLat, mockLng);
+  const updateMarker = useCallback((lat: number, lng: number) => {
+    if (!mapInstanceRef.current) return;
+
+    const position = { lat, lng };
+
+    if (markerRef.current) {
+      markerRef.current.setPosition(position);
+    } else {
+      markerRef.current = new google.maps.Marker({
+        position,
+        map: mapInstanceRef.current,
+        draggable: true,
+      });
+
+      markerRef.current.addListener("dragend", (e: google.maps.MapMouseEvent) => {
+        if (e.latLng) {
+          onLocationChange(e.latLng.lat(), e.latLng.lng());
+        }
+      });
+    }
+
+    mapInstanceRef.current.panTo(position);
   }, [onLocationChange]);
 
-  const handleMapClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      // Mock map click - in production, use Google Maps onClick event
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+  useEffect(() => {
+    const initMap = async () => {
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
 
-      // Convert pixel coordinates to lat/lng (mock calculation)
-      const mockLat = 40.4093 + (y / rect.height - 0.5) * 0.2;
-      const mockLng = 49.8671 + (x / rect.width - 0.5) * 0.2;
+      if (!apiKey || typeof window === 'undefined') {
+        return;
+      }
 
-      onLocationChange(mockLat, mockLng);
-    },
-    [onLocationChange]
-  );
+      try {
+        // Load Google Maps script dynamically
+        if (!window.google?.maps) {
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+          script.async = true;
+          script.defer = true;
+
+          await new Promise<void>((resolve, reject) => {
+            script.onload = () => resolve();
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+        }
+
+        if (!mapRef.current || mapInstanceRef.current) return;
+
+        // Default center to Baku
+        const defaultCenter = { lat: 40.4093, lng: 49.8671 };
+        const center = lat && lng ? { lat, lng } : defaultCenter;
+
+        const map = new google.maps.Map(mapRef.current, {
+          center,
+          zoom: 13,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+        });
+
+        // Add click listener
+        map.addListener("click", (e: google.maps.MapMouseEvent) => {
+          if (e.latLng) {
+            const newLat = e.latLng.lat();
+            const newLng = e.latLng.lng();
+            onLocationChange(newLat, newLng);
+            updateMarker(newLat, newLng);
+          }
+        });
+
+        mapInstanceRef.current = map;
+
+        // Add marker if coordinates exist
+        if (lat && lng) {
+          updateMarker(lat, lng);
+        }
+      } catch (error) {
+        console.error("Failed to load Google Maps:", error);
+      }
+    };
+
+    initMap();
+  }, [lat, lng, onLocationChange, updateMarker]);
+
+  const handleSearch = useCallback(async () => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
+
+    if (!apiKey || typeof window === 'undefined' || !window.google?.maps) return;
+
+    if (!searchQuery && !address && !city) return;
+
+    const query = searchQuery || `${address}, ${city}`;
+
+    try {
+      const geocoder = new google.maps.Geocoder();
+
+      geocoder.geocode({ address: query }, (results, status) => {
+        if (status === "OK" && results && results[0]) {
+          const location = results[0].geometry.location;
+          const newLat = location.lat();
+          const newLng = location.lng();
+          onLocationChange(newLat, newLng);
+
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setCenter(location);
+            mapInstanceRef.current.setZoom(15);
+            updateMarker(newLat, newLng);
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Geocoding failed:", error);
+    }
+  }, [searchQuery, address, city, onLocationChange, updateMarker]);
+
+  const handleClear = () => {
+    onLocationChange(null, null);
+    if (markerRef.current) {
+      markerRef.current.setMap(null);
+      markerRef.current = null;
+    }
+  };
 
   const hasCoordinates = lat !== null && lng !== null;
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
 
   return (
     <div className="space-y-4">
@@ -64,31 +168,26 @@ export function MapPicker({
       </div>
 
       {/* Map Container */}
-      <div
-        onClick={handleMapClick}
-        className="relative h-96 cursor-crosshair overflow-hidden rounded-xl border border-border bg-surface-muted"
-      >
-        {/* TODO: Replace with actual Google Maps component when API key is configured */}
-        <div className="flex h-full items-center justify-center">
-          <div className="text-center">
-            <MapPin className="mx-auto mb-3 h-12 w-12 text-primary" />
-            <p className="text-sm font-medium text-text-primary">
-              Xəritədə klikləyin və ya ünvan axtarın
-            </p>
-            <p className="mt-1 text-xs text-text-muted">
-              Google Maps API konfiqurasiyasından sonra interaktiv xəritə
-              göstəriləcək
-            </p>
+      {apiKey ? (
+        <div
+          ref={mapRef}
+          className="h-96 cursor-crosshair overflow-hidden rounded-xl border border-border"
+        />
+      ) : (
+        <div className="relative h-96 cursor-crosshair overflow-hidden rounded-xl border border-border bg-surface-muted">
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <MapPin className="mx-auto mb-3 h-12 w-12 text-primary" />
+              <p className="text-sm font-medium text-text-primary">
+                Google Maps API açarı konfiqurasiya edilməyib
+              </p>
+              <p className="mt-1 text-xs text-text-muted">
+                Xəritə funksionallığı üçün API açarı tələb olunur
+              </p>
+            </div>
           </div>
         </div>
-
-        {/* Selected Location Marker (Mock) */}
-        {hasCoordinates && (
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full">
-            <MapPin className="h-10 w-10 text-error drop-shadow-lg" />
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Coordinates Display */}
       {hasCoordinates && (
@@ -110,7 +209,7 @@ export function MapPicker({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => onLocationChange(0, 0)}
+              onClick={handleClear}
             >
               Təmizlə
             </Button>
@@ -120,7 +219,7 @@ export function MapPicker({
 
       {/* Help Text */}
       <p className="text-xs text-text-muted">
-        Xəritədə elanın dəqiq yerini seçin. Bu, alıcıların əmlakı daha asan
+        Xəritədə klikləyin və ya markeri sürükləyin. Bu, alıcıların əmlakı daha asan
         tapmasına kömək edəcək.
       </p>
     </div>
