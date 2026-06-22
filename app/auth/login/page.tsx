@@ -55,7 +55,6 @@ function LoginForm() {
       router.push(returnUrl);
       router.refresh();
     } catch (err) {
-      console.error("Login error:", err);
       setError("Gözlənilməz xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.");
       setIsLoading(false);
     }
@@ -75,7 +74,6 @@ function LoginForm() {
         return;
       }
     } catch (err) {
-      console.error("OAuth sign in error:", err);
       setError("Gözlənilməz xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.");
       setIsLoading(false);
     }

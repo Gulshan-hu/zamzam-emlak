@@ -118,7 +118,6 @@ export default function RegisterPage() {
       // Success - redirect to email confirmation page
       router.push(`/auth/confirm-email?email=${encodeURIComponent(formData.email)}`);
     } catch (err) {
-      console.error("Registration error:", err);
       setErrors({
         general: "Gözlənilməz xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.",
       });
@@ -139,7 +138,6 @@ export default function RegisterPage() {
         return;
       }
     } catch (err) {
-      console.error("OAuth sign in error:", err);
       setErrors({
         general: "Gözlənilməz xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.",
       });

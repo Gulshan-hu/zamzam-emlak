@@ -40,7 +40,6 @@ function ConfirmEmailContent() {
         setResendSuccess(true);
       }
     } catch (err) {
-      console.error("Resend email error:", err);
       setResendError("Xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.");
     } finally {
       setIsResending(false);

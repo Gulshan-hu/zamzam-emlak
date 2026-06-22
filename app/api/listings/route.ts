@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ listing })
   } catch (error) {
-    console.error('Create listing error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create listing' },
       { status: 500 }

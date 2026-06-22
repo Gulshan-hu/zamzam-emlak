@@ -50,7 +50,6 @@ export function AIAnalysisSection({ listingId: _listingId }: AIAnalysisSectionPr
 
       setAnalysis(mockAnalysis);
     } catch (err) {
-      console.error("AI analysis error:", err);
       setError("Analiz zamanı xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.");
     } finally {
       setIsLoading(false);

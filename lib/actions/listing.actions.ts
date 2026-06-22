@@ -102,9 +102,6 @@ export async function getListingsAction(
 
     return { success: true, data: result }
   } catch (err) {
-    console.error('Failed to fetch listings:', err)
-
-    // Check if it's a database connection error
     if (err && typeof err === 'object' && 'code' in err) {
       const error = err as { code?: string; message?: string }
       if (error.code === 'P1001' || error.code === 'P1000') {
@@ -130,7 +127,6 @@ export async function getListingBySlugAction(
 
     return { success: true, data: listing }
   } catch (err) {
-    console.error('Listing not found:', err)
     return { success: false, error: 'Listing not found' }
   }
 }
@@ -145,7 +141,6 @@ export async function approveListingAction(id: string): Promise<ActionResponse<L
 
     return { success: true, data: listing }
   } catch (err) {
-    console.error('Failed to approve listing:', err)
     return { success: false, error: 'Failed to approve listing' }
   }
 }
@@ -162,7 +157,6 @@ export async function rejectListingAction(
 
     return { success: true, data: listing }
   } catch (err) {
-    console.error('Failed to reject listing:', err)
     return { success: false, error: 'Failed to reject listing' }
   }
 }
@@ -177,7 +171,6 @@ export async function toggleFeaturedAction(id: string): Promise<ActionResponse<L
 
     return { success: true, data: listing }
   } catch (err) {
-    console.error('Failed to toggle featured status:', err)
     return { success: false, error: 'Failed to toggle featured status' }
   }
 }

@@ -51,7 +51,7 @@ export function SaveListingButton({ listingId }: SaveListingButtonProps) {
         }
       }
     } catch (error) {
-      console.error("Failed to toggle save:", error);
+      // Silent fail for save/unsave
     } finally {
       setIsLoading(false);
     }

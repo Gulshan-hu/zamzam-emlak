@@ -248,7 +248,6 @@ export function CreateListingForm({
       // Redirect to listings page
       router.push("/listings?success=created");
     } catch (err) {
-      console.error("Failed to create listing:", err);
       setError(err instanceof Error ? err.message : "Elan yaradılarkən xəta baş verdi. Yenidən cəhd edin.");
     } finally {
       setIsSubmitting(false);

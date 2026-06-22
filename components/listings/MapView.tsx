@@ -55,7 +55,7 @@ export function MapView({ lat, lng, address }: MapViewProps) {
 
         mapInstanceRef.current = map;
       } catch (error) {
-        console.error("Failed to load Google Maps:", error);
+        // Map loading error - silent fail
       }
     };
 

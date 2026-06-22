@@ -6,11 +6,6 @@ export abstract class BaseService {
 
   protected handleError(error: unknown, operation: string): never {
     const appError = handleError(error)
-    console.error(`Service error in ${operation}:`, {
-      message: appError.message,
-      code: appError.code,
-      statusCode: appError.statusCode,
-    })
     throw appError
   }
 

@@ -103,7 +103,7 @@ export function MapPicker({
           updateMarker(lat, lng);
         }
       } catch (error) {
-        console.error("Failed to load Google Maps:", error);
+        // Map loading error - silent fail
       }
     };
 
@@ -137,7 +137,7 @@ export function MapPicker({
         }
       });
     } catch (error) {
-      console.error("Geocoding failed:", error);
+      // Geocoding error - silent fail
     }
   }, [searchQuery, address, city, onLocationChange, updateMarker]);
 

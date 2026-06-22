@@ -39,7 +39,6 @@ export default function ForgotPasswordPage() {
       setSuccess(true);
       setIsLoading(false);
     } catch (err) {
-      console.error("Reset password error:", err);
       setError("Gözlənilməz xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.");
       setIsLoading(false);
     }

@@ -21,7 +21,6 @@ export async function saveListingAction(
 
     return { success: true, data: undefined }
   } catch (err) {
-    console.error('Failed to save listing:', err)
     return { success: false, error: 'Failed to save listing' }
   }
 }
@@ -43,7 +42,6 @@ export async function unsaveListingAction(
 
     return { success: true, data: undefined }
   } catch (err) {
-    console.error('Failed to unsave listing:', err)
     return { success: false, error: 'Failed to unsave listing' }
   }
 }
@@ -64,7 +62,6 @@ export async function checkListingSavedAction(
 
     return { success: true, data: !!saved }
   } catch (err) {
-    console.error('Failed to check saved listing:', err)
     return { success: false, error: 'Failed to check saved listing' }
   }
 }

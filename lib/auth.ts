@@ -55,7 +55,6 @@ export async function signIn(
 
     return { success: true, data: data.user }
   } catch (err) {
-    console.error('Sign in error:', err)
     return {
       success: false,
       error: { message: 'An unexpected error occurred. Please try again.' },
@@ -111,7 +110,6 @@ export async function signUp(
 
     return { success: true, data: data.user }
   } catch (err) {
-    console.error('Sign up error:', err)
     return {
       success: false,
       error: { message: 'An unexpected error occurred. Please try again.' },
@@ -142,7 +140,6 @@ export async function signInWithOAuth(provider: 'google'): Promise<AuthResponse>
 
     return { success: true, data: undefined }
   } catch (err) {
-    console.error('OAuth sign in error:', err)
     return {
       success: false,
       error: { message: 'An unexpected error occurred. Please try again.' },
@@ -168,7 +165,6 @@ export async function signOut(): Promise<AuthResponse> {
 
     return { success: true, data: undefined }
   } catch (err) {
-    console.error('Sign out error:', err)
     return {
       success: false,
       error: { message: 'An unexpected error occurred. Please try again.' },
@@ -189,7 +185,6 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
     return user
   } catch (err) {
-    console.error('Get current user error:', err)
     return null
   }
 }
@@ -214,7 +209,6 @@ export async function resetPassword(email: string): Promise<AuthResponse> {
 
     return { success: true, data: undefined }
   } catch (err) {
-    console.error('Reset password error:', err)
     return {
       success: false,
       error: { message: 'An unexpected error occurred. Please try again.' },
@@ -251,7 +245,6 @@ export async function updatePassword(newPassword: string): Promise<AuthResponse>
 
     return { success: true, data: undefined }
   } catch (err) {
-    console.error('Update password error:', err)
     return {
       success: false,
       error: { message: 'An unexpected error occurred. Please try again.' },

@@ -21,7 +21,6 @@ export async function getAgencyQuotaAction(
 
     return { success: true, data: quotaInfo }
   } catch (err) {
-    console.error('Failed to fetch agency quota:', err)
     return { success: false, error: 'Failed to fetch agency quota' }
   }
 }
