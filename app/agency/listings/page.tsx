@@ -80,7 +80,9 @@ export default async function AgencyListingsPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {listings.map((listing) => (
+          {(() => {
+            type ListingItem = (typeof listings)[number]
+            return listings.map((listing: ListingItem) => (
             <Card key={listing.id} className="overflow-hidden">
               <div className="flex gap-4 p-4">
                 <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-lg">
@@ -139,7 +141,8 @@ export default async function AgencyListingsPage() {
                 </div>
               </div>
             </Card>
-          ))}
+          ))
+          })()}
         </div>
       )}
     </div>

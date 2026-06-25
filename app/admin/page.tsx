@@ -95,7 +95,9 @@ export default async function AdminDashboardPage() {
               Hələ ki fəaliyyət yoxdur
             </div>
           ) : (
-            activity.map((item) => (
+            (() => {
+              type ActivityItem = (typeof activity)[number]
+              return activity.map((item: ActivityItem) => (
               <div key={item.id} className="flex items-center justify-between p-6">
                 <div>
                   <p className="text-text-primary">{item.description}</p>
@@ -125,6 +127,7 @@ export default async function AdminDashboardPage() {
                 </div>
               </div>
             ))
+            })()
           )}
         </div>
       </Card>

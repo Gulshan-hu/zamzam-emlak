@@ -88,9 +88,12 @@ async function ListingsContent({ searchParams }: ListingsPageProps) {
           ) : (
             <>
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {listings.map((listing) => (
-                  <ListingCard key={listing.id} listing={listing as ListingCardData} />
-                ))}
+                {(() => {
+                  type ListingItem = (typeof listings)[number]
+                  return listings.map((listing: ListingItem) => (
+                    <ListingCard key={listing.id} listing={listing as ListingCardData} />
+                  ))
+                })()}
               </div>
 
               {/* Pagination */}

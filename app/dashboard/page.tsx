@@ -154,7 +154,9 @@ export default async function DashboardPage() {
               Hələ ki elanınız yoxdur
             </div>
           ) : (
-            recentListings.map((listing) => (
+            (() => {
+              type ListingItem = (typeof recentListings)[number]
+              return recentListings.map((listing: ListingItem) => (
               <div key={listing.id} className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -178,6 +180,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
             ))
+            })()
           )}
         </div>
       </Card>
