@@ -3,7 +3,39 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getServerUser } from '@/lib/auth-server'
+import {
+  approveListingSchema,
+  rejectListingSchema,
+  bulkApproveListingsSchema,
+  bulkRejectListingsSchema,
+  updateUserRoleSchema,
+  toggleUserBlockSchema,
+  assignUserToAgencySchema,
+  toggleAgencyVerificationSchema,
+  createAgencyPackageSchema,
+  resetAgencyQuotaSchema,
+  deleteAgencySchema,
+} from '@/lib/validation/admin-schemas'
 import type { ActionResponse } from '@/lib/types'
+
+async function verifyAdminRole(): Promise<string | null> {
+  const user = await getServerUser()
+  if (!user) {
+    return null
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { role: true },
+  })
+
+  if (!dbUser || dbUser.role !== 'ADMIN') {
+    return null
+  }
+
+  return user.id
+}
 
 export async function getDashboardStats(): Promise<
   ActionResponse<{
@@ -17,6 +49,11 @@ export async function getDashboardStats(): Promise<
   }>
 > {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -49,7 +86,8 @@ export async function getDashboardStats(): Promise<
       },
     }
   } catch (error) {
-    return { success: false, error: 'Failed to fetch dashboard stats' }
+    console.error('Failed to fetch dashboard stats:', error)
+    return { success: false, error: 'Statistikanı yükləmək mümkün olmadı' }
   }
 }
 
@@ -64,6 +102,11 @@ export async function getRecentActivity(): Promise<
   >
 > {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
     const [recentListings, recentUsers, recentAgencies] = await Promise.all([
       prisma.listing.findMany({
         where: {
@@ -129,14 +172,22 @@ export async function getRecentActivity(): Promise<
       data: activity.slice(0, 10),
     }
   } catch (error) {
-    return { success: false, error: 'Failed to fetch recent activity' }
+    console.error('Failed to fetch recent activity:', error)
+    return { success: false, error: 'Fəaliyyət tarixçəsini yükləmək mümkün olmadı' }
   }
 }
 
 export async function approveListingAction(listingId: string): Promise<ActionResponse> {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
+    const validated = approveListingSchema.parse({ listingId })
+
     await prisma.listing.update({
-      where: { id: listingId },
+      where: { id: validated.listingId },
       data: {
         status: 'ACTIVE',
         publishedAt: new Date(),
@@ -149,7 +200,8 @@ export async function approveListingAction(listingId: string): Promise<ActionRes
 
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: 'Failed to approve listing' }
+    console.error('Failed to approve listing:', error)
+    return { success: false, error: 'Elanı təsdiqləmək mümkün olmadı' }
   }
 }
 
@@ -158,11 +210,18 @@ export async function rejectListingAction(
   reason: string
 ): Promise<ActionResponse> {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
+    const validated = rejectListingSchema.parse({ listingId, reason })
+
     const listing = await prisma.listing.update({
-      where: { id: listingId },
+      where: { id: validated.listingId },
       data: {
         status: 'REJECTED',
-        rejectionReason: reason,
+        rejectionReason: validated.reason,
       },
       include: {
         user: { select: { email: true, name: true } },
@@ -173,7 +232,7 @@ export async function rejectListingAction(
     await supabase.auth.admin.inviteUserByEmail(listing.user.email, {
       data: {
         listingTitle: listing.title,
-        rejectionReason: reason,
+        rejectionReason: validated.reason,
       },
     })
 
@@ -181,14 +240,22 @@ export async function rejectListingAction(
 
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: 'Failed to reject listing' }
+    console.error('Failed to reject listing:', error)
+    return { success: false, error: 'Elanı rədd etmək mümkün olmadı' }
   }
 }
 
 export async function bulkApproveListingsAction(listingIds: string[]): Promise<ActionResponse> {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
+    const validated = bulkApproveListingsSchema.parse({ listingIds })
+
     await prisma.listing.updateMany({
-      where: { id: { in: listingIds } },
+      where: { id: { in: validated.listingIds } },
       data: {
         status: 'ACTIVE',
         publishedAt: new Date(),
@@ -201,7 +268,8 @@ export async function bulkApproveListingsAction(listingIds: string[]): Promise<A
 
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: 'Failed to bulk approve listings' }
+    console.error('Failed to bulk approve listings:', error)
+    return { success: false, error: 'Elanları təsdiqləmək mümkün olmadı' }
   }
 }
 
@@ -210,11 +278,18 @@ export async function bulkRejectListingsAction(
   reason: string
 ): Promise<ActionResponse> {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
+    const validated = bulkRejectListingsSchema.parse({ listingIds, reason })
+
     await prisma.listing.updateMany({
-      where: { id: { in: listingIds } },
+      where: { id: { in: validated.listingIds } },
       data: {
         status: 'REJECTED',
-        rejectionReason: reason,
+        rejectionReason: validated.reason,
       },
     })
 
@@ -222,7 +297,8 @@ export async function bulkRejectListingsAction(
 
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: 'Failed to bulk reject listings' }
+    console.error('Failed to bulk reject listings:', error)
+    return { success: false, error: 'Elanları rədd etmək mümkün olmadı' }
   }
 }
 
@@ -231,21 +307,29 @@ export async function updateUserRoleAction(
   role: 'USER' | 'AGENT' | 'AGENCY_OWNER' | 'ADMIN'
 ): Promise<ActionResponse> {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
+    const validated = updateUserRoleSchema.parse({ userId, role })
+
     await prisma.user.update({
-      where: { id: userId },
-      data: { role },
+      where: { id: validated.userId },
+      data: { role: validated.role },
     })
 
     const supabase = createAdminClient()
-    await supabase.auth.admin.updateUserById(userId, {
-      user_metadata: { role },
+    await supabase.auth.admin.updateUserById(validated.userId, {
+      user_metadata: { role: validated.role },
     })
 
     revalidatePath('/admin/users')
 
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: 'Failed to update user role' }
+    console.error('Failed to update user role:', error)
+    return { success: false, error: 'İstifadəçi rolunu yeniləmək mümkün olmadı' }
   }
 }
 
@@ -254,16 +338,24 @@ export async function toggleUserBlockAction(
   isBlocked: boolean
 ): Promise<ActionResponse> {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
+    const validated = toggleUserBlockSchema.parse({ userId, isBlocked })
+
     await prisma.user.update({
-      where: { id: userId },
-      data: { isBlocked },
+      where: { id: validated.userId },
+      data: { isBlocked: validated.isBlocked },
     })
 
     revalidatePath('/admin/users')
 
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: 'Failed to toggle user block status' }
+    console.error('Failed to toggle user block status:', error)
+    return { success: false, error: 'İstifadəçi statusunu dəyişmək mümkün olmadı' }
   }
 }
 
@@ -272,16 +364,24 @@ export async function assignUserToAgencyAction(
   agencyId: string | null
 ): Promise<ActionResponse> {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
+    const validated = assignUserToAgencySchema.parse({ userId, agencyId })
+
     await prisma.user.update({
-      where: { id: userId },
-      data: { agencyId },
+      where: { id: validated.userId },
+      data: { agencyId: validated.agencyId },
     })
 
     revalidatePath('/admin/users')
 
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: 'Failed to assign user to agency' }
+    console.error('Failed to assign user to agency:', error)
+    return { success: false, error: 'İstifadəçini agentliyə təyin etmək mümkün olmadı' }
   }
 }
 
@@ -290,16 +390,24 @@ export async function toggleAgencyVerificationAction(
   isVerified: boolean
 ): Promise<ActionResponse> {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
+    const validated = toggleAgencyVerificationSchema.parse({ agencyId, isVerified })
+
     await prisma.agency.update({
-      where: { id: agencyId },
-      data: { isVerified },
+      where: { id: validated.agencyId },
+      data: { isVerified: validated.isVerified },
     })
 
     revalidatePath('/admin/agencies')
 
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: 'Failed to toggle agency verification' }
+    console.error('Failed to toggle agency verification:', error)
+    return { success: false, error: 'Agentlik statusunu dəyişmək mümkün olmadı' }
   }
 }
 
@@ -311,20 +419,27 @@ export async function createAgencyPackageAction(data: {
   validMonths: number
 }): Promise<ActionResponse> {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
+    const validated = createAgencyPackageSchema.parse(data)
+
     await prisma.agencyPackage.updateMany({
-      where: { agencyId: data.agencyId, isActive: true },
+      where: { agencyId: validated.agencyId, isActive: true },
       data: { isActive: false },
     })
 
     const validUntil = new Date()
-    validUntil.setMonth(validUntil.getMonth() + data.validMonths)
+    validUntil.setMonth(validUntil.getMonth() + validated.validMonths)
 
     await prisma.agencyPackage.create({
       data: {
-        agencyId: data.agencyId,
-        name: data.name,
-        listingQuota: data.listingQuota,
-        priceAZN: data.priceAZN,
+        agencyId: validated.agencyId,
+        name: validated.name,
+        listingQuota: validated.listingQuota,
+        priceAZN: validated.priceAZN,
         validUntil,
         isActive: true,
       },
@@ -334,14 +449,22 @@ export async function createAgencyPackageAction(data: {
 
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: 'Failed to create agency package' }
+    console.error('Failed to create agency package:', error)
+    return { success: false, error: 'Paket yaratmaq mümkün olmadı' }
   }
 }
 
 export async function resetAgencyQuotaAction(packageId: string): Promise<ActionResponse> {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
+    const validated = resetAgencyQuotaSchema.parse({ packageId })
+
     await prisma.agencyPackage.update({
-      where: { id: packageId },
+      where: { id: validated.packageId },
       data: { usedQuota: 0 },
     })
 
@@ -349,20 +472,29 @@ export async function resetAgencyQuotaAction(packageId: string): Promise<ActionR
 
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: 'Failed to reset agency quota' }
+    console.error('Failed to reset agency quota:', error)
+    return { success: false, error: 'Kvotanı sıfırlamaq mümkün olmadı' }
   }
 }
 
 export async function deleteAgencyAction(agencyId: string): Promise<ActionResponse> {
   try {
+    const adminId = await verifyAdminRole()
+    if (!adminId) {
+      return { success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }
+    }
+
+    const validated = deleteAgencySchema.parse({ agencyId })
+
     await prisma.agency.delete({
-      where: { id: agencyId },
+      where: { id: validated.agencyId },
     })
 
     revalidatePath('/admin/agencies')
 
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: 'Failed to delete agency' }
+    console.error('Failed to delete agency:', error)
+    return { success: false, error: 'Agentliyi silmək mümkün olmadı' }
   }
 }

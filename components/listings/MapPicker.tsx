@@ -4,6 +4,21 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { MapPin, Search } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import dynamic from "next/dynamic";
+import L from "leaflet";
+
+const MapContainer = dynamic(
+  () => import('react-leaflet').then((mod) => mod.MapContainer),
+  { ssr: false }
+)
+const TileLayer = dynamic(
+  () => import('react-leaflet').then((mod) => mod.TileLayer),
+  { ssr: false }
+)
+const Marker = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Marker),
+  { ssr: false }
+)
 
 type MapPickerProps = {
   address: string;
@@ -13,6 +28,32 @@ type MapPickerProps = {
   onLocationChange: (lat: number | null, lng: number | null) => void;
 };
 
+// Default marker icon
+const defaultIcon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+function MapEvents({
+  onMapClick,
+}: {
+  onMapClick: (lat: number, lng: number) => void;
+}) {
+  const { useMapEvents } = require('react-leaflet');
+
+  useMapEvents({
+    click: (e: any) => {
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
 export function MapPicker({
   address,
   city,
@@ -21,136 +62,47 @@ export function MapPicker({
   onLocationChange,
 }: MapPickerProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
+  const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(
+    lat && lng ? [lat, lng] : null
+  );
+  const [mapCenter, setMapCenter] = useState<[number, number]>(
+    lat && lng ? [lat, lng] : [40.4093, 49.8671]
+  );
 
-  const updateMarker = useCallback((lat: number, lng: number) => {
-    if (!mapInstanceRef.current) return;
-
-    const position = { lat, lng };
-
-    if (markerRef.current) {
-      markerRef.current.setPosition(position);
-    } else {
-      markerRef.current = new google.maps.Marker({
-        position,
-        map: mapInstanceRef.current,
-        draggable: true,
-      });
-
-      markerRef.current.addListener("dragend", (e: google.maps.MapMouseEvent) => {
-        if (e.latLng) {
-          onLocationChange(e.latLng.lat(), e.latLng.lng());
-        }
-      });
-    }
-
-    mapInstanceRef.current.panTo(position);
-  }, [onLocationChange]);
-
-  useEffect(() => {
-    const initMap = async () => {
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
-
-      if (!apiKey || typeof window === 'undefined') {
-        return;
-      }
-
-      try {
-        // Load Google Maps script dynamically
-        if (!window.google?.maps) {
-          const script = document.createElement('script');
-          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-          script.async = true;
-          script.defer = true;
-
-          await new Promise<void>((resolve, reject) => {
-            script.onload = () => resolve();
-            script.onerror = reject;
-            document.head.appendChild(script);
-          });
-        }
-
-        if (!mapRef.current || mapInstanceRef.current) return;
-
-        // Default center to Baku
-        const defaultCenter = { lat: 40.4093, lng: 49.8671 };
-        const center = lat && lng ? { lat, lng } : defaultCenter;
-
-        const map = new google.maps.Map(mapRef.current, {
-          center,
-          zoom: 13,
-          mapTypeControl: false,
-          streetViewControl: false,
-          fullscreenControl: false,
-        });
-
-        // Add click listener
-        map.addListener("click", (e: google.maps.MapMouseEvent) => {
-          if (e.latLng) {
-            const newLat = e.latLng.lat();
-            const newLng = e.latLng.lng();
-            onLocationChange(newLat, newLng);
-            updateMarker(newLat, newLng);
-          }
-        });
-
-        mapInstanceRef.current = map;
-
-        // Add marker if coordinates exist
-        if (lat && lng) {
-          updateMarker(lat, lng);
-        }
-      } catch (error) {
-        // Map loading error - silent fail
-      }
-    };
-
-    initMap();
-  }, [lat, lng, onLocationChange, updateMarker]);
+  const handleMapClick = (clickLat: number, clickLng: number) => {
+    setMarkerPosition([clickLat, clickLng]);
+    onLocationChange(clickLat, clickLng);
+  };
 
   const handleSearch = useCallback(async () => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
-
-    if (!apiKey || typeof window === 'undefined' || !window.google?.maps) return;
-
-    if (!searchQuery && !address && !city) return;
-
     const query = searchQuery || `${address}, ${city}`;
+    if (!query) return;
 
     try {
-      const geocoder = new google.maps.Geocoder();
+      // Use Nominatim (OpenStreetMap) geocoding
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`
+      );
+      const data = await response.json();
 
-      geocoder.geocode({ address: query }, (results, status) => {
-        if (status === "OK" && results && results[0]) {
-          const location = results[0].geometry.location;
-          const newLat = location.lat();
-          const newLng = location.lng();
-          onLocationChange(newLat, newLng);
-
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.setCenter(location);
-            mapInstanceRef.current.setZoom(15);
-            updateMarker(newLat, newLng);
-          }
-        }
-      });
+      if (data && data[0]) {
+        const newLat = parseFloat(data[0].lat);
+        const newLng = parseFloat(data[0].lon);
+        setMarkerPosition([newLat, newLng]);
+        setMapCenter([newLat, newLng]);
+        onLocationChange(newLat, newLng);
+      }
     } catch (error) {
-      // Geocoding error - silent fail
+      console.error('Geocoding error:', error);
     }
-  }, [searchQuery, address, city, onLocationChange, updateMarker]);
+  }, [searchQuery, address, city, onLocationChange]);
 
   const handleClear = () => {
+    setMarkerPosition(null);
     onLocationChange(null, null);
-    if (markerRef.current) {
-      markerRef.current.setMap(null);
-      markerRef.current = null;
-    }
   };
 
   const hasCoordinates = lat !== null && lng !== null;
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
 
   return (
     <div className="space-y-4">
@@ -168,26 +120,35 @@ export function MapPicker({
       </div>
 
       {/* Map Container */}
-      {apiKey ? (
-        <div
-          ref={mapRef}
-          className="h-96 cursor-crosshair overflow-hidden rounded-xl border border-border"
-        />
-      ) : (
-        <div className="relative h-96 cursor-crosshair overflow-hidden rounded-xl border border-border bg-surface-muted">
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <MapPin className="mx-auto mb-3 h-12 w-12 text-primary" />
-              <p className="text-sm font-medium text-text-primary">
-                Google Maps API açarı konfiqurasiya edilməyib
-              </p>
-              <p className="mt-1 text-xs text-text-muted">
-                Xəritə funksionallığı üçün API açarı tələb olunur
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="h-96 cursor-crosshair overflow-hidden rounded-xl border border-border">
+        <MapContainer
+          center={mapCenter}
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+          zoomControl={true}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <MapEvents onMapClick={handleMapClick} />
+          {markerPosition && (
+            <Marker
+              position={markerPosition}
+              icon={defaultIcon}
+              draggable={true}
+              eventHandlers={{
+                dragend: (e) => {
+                  const marker = e.target;
+                  const position = marker.getLatLng();
+                  setMarkerPosition([position.lat, position.lng]);
+                  onLocationChange(position.lat, position.lng);
+                },
+              }}
+            />
+          )}
+        </MapContainer>
+      </div>
 
       {/* Coordinates Display */}
       {hasCoordinates && (

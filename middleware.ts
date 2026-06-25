@@ -33,25 +33,45 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/listings/new', '/my-listings', '/messages']
-  const adminRoutes = ['/admin']
+  // Public routes that don't require authentication
+  const publicRoutes = ['/', '/listings', '/map', '/ai-search', '/ai-analysis', '/auth']
+  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
-  // Check if current path matches protected routes
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  )
-  const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route))
-
-  // Redirect to login if not authenticated and accessing protected route
-  if (isProtectedRoute && !user) {
-    const loginUrl = new URL('/auth/login', request.url)
-    loginUrl.searchParams.set('returnUrl', pathname)
-    return NextResponse.redirect(loginUrl)
+  // Dashboard routes - require any authenticated user
+  if (pathname.startsWith('/dashboard')) {
+    if (!user) {
+      const loginUrl = new URL('/auth/login', request.url)
+      loginUrl.searchParams.set('returnUrl', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
   }
 
-  // Check admin access
-  if (isAdminRoute) {
+  // Listings/new - require any authenticated user
+  if (pathname === '/listings/new') {
+    if (!user) {
+      const loginUrl = new URL('/auth/login', request.url)
+      loginUrl.searchParams.set('returnUrl', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+  }
+
+  // Agency routes - require AGENCY_OWNER or AGENT role
+  if (pathname.startsWith('/agency')) {
+    if (!user) {
+      const loginUrl = new URL('/auth/login', request.url)
+      loginUrl.searchParams.set('returnUrl', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    const userRole = user.user_metadata?.role as string | undefined
+
+    if (userRole !== 'AGENCY_OWNER' && userRole !== 'AGENT') {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  }
+
+  // Admin routes - require ADMIN role
+  if (pathname.startsWith('/admin')) {
     if (!user) {
       const loginUrl = new URL('/auth/login', request.url)
       loginUrl.searchParams.set('returnUrl', pathname)
@@ -61,13 +81,12 @@ export async function middleware(request: NextRequest) {
     const userRole = user.user_metadata?.role as string | undefined
 
     if (userRole !== 'ADMIN') {
-      // Not an admin - redirect to home
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && pathname.startsWith('/auth/')) {
+  // Redirect authenticated users away from auth pages (except callback and confirm-email)
+  if (user && pathname.startsWith('/auth/') && !pathname.startsWith('/auth/callback') && !pathname.startsWith('/auth/confirm-email')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 

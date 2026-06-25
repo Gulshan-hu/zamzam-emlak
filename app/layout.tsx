@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers/Providers";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import "./globals.css";
+import "leaflet/dist/leaflet.css";
 
 const inter = Inter({
   variable: "--font-geist-sans",

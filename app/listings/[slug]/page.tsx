@@ -5,7 +5,7 @@ import { ImageGallery } from "@/components/listings/ImageGallery";
 import { ListingDetails } from "@/components/listings/ListingDetails";
 import { ContactCard } from "@/components/listings/ContactCard";
 import { SellerCard } from "@/components/listings/SellerCard";
-import { MapView } from "@/components/listings/MapView";
+import { ListingMap } from '@/components/map/ListingMap'
 import { AIAnalysisSection } from "@/components/listings/AIAnalysisSection";
 import { SaveListingButton } from "@/components/listings/SaveListingButton";
 import { Badge } from "@/components/ui/Badge";
@@ -76,7 +76,7 @@ async function ListingContent({ slug }: { slug: string }) {
 
             {/* Map */}
             {listing.lat && listing.lng && (
-              <MapView lat={listing.lat} lng={listing.lng} address={listing.address} />
+              <ListingMap lat={listing.lat!} lng={listing.lng!} address={listing.address} />
             )}
 
             {/* AI Analysis */}

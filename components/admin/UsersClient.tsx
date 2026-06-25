@@ -36,8 +36,11 @@ export function UsersClient({ users, agencies, initialSearch }: UsersClientProps
   }
 
   const handleRoleChange = async (userId: string, role: string) => {
+    if (role !== 'USER' && role !== 'AGENT' && role !== 'AGENCY_OWNER' && role !== 'ADMIN') {
+      return
+    }
     setIsSubmitting(true)
-    await updateUserRoleAction(userId, role as any)
+    await updateUserRoleAction(userId, role)
     setIsSubmitting(false)
     router.refresh()
   }

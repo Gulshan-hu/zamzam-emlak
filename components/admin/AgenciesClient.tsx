@@ -15,7 +15,6 @@ import {
   resetAgencyQuotaAction,
   deleteAgencyAction,
 } from '@/lib/actions/admin.actions'
-import { prisma } from '@/lib/prisma'
 import type { Agency, AgencyPackage } from '@/lib/types'
 
 type AgencyWithRelations = Agency & {

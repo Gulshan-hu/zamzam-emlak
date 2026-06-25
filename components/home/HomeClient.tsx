@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, BarChart2, Camera, ShieldCheck, ArrowRight, Building2, Home, LandPlot, Store } from "lucide-react";
+import { Search, BarChart2, Camera, ShieldCheck, ArrowRight, Building2, Home, LandPlot, Store, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -108,6 +108,12 @@ export function HomeClient({ listings }: HomeClientProps) {
                 <Store className="mr-2 h-4 w-4" />
                 {t("commercialProperties")}
               </Button>
+              <Link href="/map">
+                <Button variant="secondary" size="sm">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Xəritə ilə axtar
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
