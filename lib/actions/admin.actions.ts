@@ -151,13 +151,13 @@ export async function getRecentActivity(): Promise<
             : `Elan rədd edildi: ${listing.title}`,
         createdAt: listing.updatedAt,
       })),
-      ...recentUsers.map((user) => ({
+      ...recentUsers.map((user: (typeof recentUsers)[number]) => ({
         id: user.id,
         type: 'user_registered',
         description: `Yeni istifadəçi qeydiyyatdan keçdi: ${user.name}`,
         createdAt: user.createdAt,
       })),
-      ...recentAgencies.map((agency) => ({
+     ...recentAgencies.map((agency: (typeof recentAgencies)[number]) => ({
         id: agency.id,
         type: 'agency_registered',
         description: `Yeni agentlik qeydiyyatdan keçdi: ${agency.name}`,
