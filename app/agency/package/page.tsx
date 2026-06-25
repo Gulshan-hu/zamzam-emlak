@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Mail } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AgencyPackagePage() {
   const user = await getServerUser()
 

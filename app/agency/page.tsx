@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { FileText, CheckCircle, Clock, Package as PackageIcon, AlertTriangle } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 interface RecentListing {
   id: string
   title: string

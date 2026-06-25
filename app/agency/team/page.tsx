@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/Badge'
 import { InviteAgentModal } from '@/components/agency/InviteAgentModal'
 import { RemoveAgentButton } from '@/components/agency/RemoveAgentButton'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AgencyTeamPage() {
   const user = await getServerUser()
 

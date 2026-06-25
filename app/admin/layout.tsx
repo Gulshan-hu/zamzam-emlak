@@ -5,6 +5,8 @@ import { getServerUser } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { Badge } from '@/components/ui/Badge'
 
+export const dynamic = 'force-dynamic'
+
 async function getAdminData() {
   const [pendingCount, unverifiedCount] = await Promise.all([
     prisma.listing.count({ where: { status: 'PENDING' } }),

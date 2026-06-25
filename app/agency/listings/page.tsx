@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/Badge'
 import { Edit, Trash2, ExternalLink } from 'lucide-react'
 import { DeleteListingButton } from '@/components/dashboard/DeleteListingButton'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AgencyListingsPage() {
   const user = await getServerUser()
 

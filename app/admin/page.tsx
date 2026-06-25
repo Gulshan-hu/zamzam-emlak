@@ -2,6 +2,8 @@ import { Card } from '@/components/ui/Card'
 import { getDashboardStats, getRecentActivity } from '@/lib/actions/admin.actions'
 import { FileText, Users, Building2, CheckCircle, Clock, TrendingUp } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminDashboardPage() {
   const [statsResult, activityResult] = await Promise.all([
     getDashboardStats(),

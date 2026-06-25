@@ -3,6 +3,8 @@ import { getServerUser } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 import { SavedListingsGrid } from '@/components/dashboard/SavedListingsGrid'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardSavedPage() {
   const user = await getServerUser()
 
