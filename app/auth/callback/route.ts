@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') || '/'
+  const next = requestUrl.searchParams.get('next')
 
   if (code) {
     const supabase = await createClient()
@@ -16,16 +16,16 @@ export async function GET(request: Request) {
       )
     }
 
-    // Check if this is an email confirmation
+    // Get user after successful code exchange
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (user && user.email_confirmed_at) {
-      // Email confirmed successfully - redirect to login with success message
-      return NextResponse.redirect(
-        `${requestUrl.origin}/auth/login?confirmed=true`
-      )
+    // OAuth sign-in successful - redirect to dashboard or custom next URL
+    if (user) {
+      const redirectTo = next || '/dashboard'
+      return NextResponse.redirect(`${requestUrl.origin}${redirectTo}`)
     }
   }
 
-  return NextResponse.redirect(`${requestUrl.origin}${next}`)
+  // Fallback - redirect to login if no code or session
+  return NextResponse.redirect(`${requestUrl.origin}/auth/login`)
 }

@@ -127,7 +127,7 @@ export async function signInWithOAuth(provider: 'google'): Promise<AuthResponse>
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
       },
     })
 
