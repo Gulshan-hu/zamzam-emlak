@@ -8,6 +8,20 @@ const searchSchema = z.object({
   radius: z.coerce.number().positive().max(10000), // Max 10km
 })
 
+interface PrismaListing {
+  id: string
+  slug: string
+  title: string
+  price: number
+  lat: number | null
+  lng: number | null
+  city: string
+  district: string | null
+  type: string
+  category: string
+  images: Array<{ url: string }>
+}
+
 // Haversine formula to calculate distance in meters
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000 // Earth's radius in meters
@@ -43,7 +57,7 @@ export async function GET(request: NextRequest) {
     const { lat: searchLat, lng: searchLng, radius: searchRadius } = validationResult.data
 
     // Get all active listings with coordinates
-    const listings = await prisma.listing.findMany({
+    const listings: PrismaListing[] = await prisma.listing.findMany({
       where: {
         status: 'ACTIVE',
         lat: { not: null },
@@ -70,7 +84,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by distance using Haversine formula
     const filteredListings = listings
-      .filter((listing) => {
+      .filter((listing: PrismaListing) => {
         if (!listing.lat || !listing.lng) return false
         const distance = haversineDistance(
           searchLat,
@@ -80,7 +94,7 @@ export async function GET(request: NextRequest) {
         )
         return distance <= searchRadius
       })
-      .map((listing) => ({
+      .map((listing: PrismaListing) => ({
         id: listing.id,
         slug: listing.slug,
         title: listing.title,
