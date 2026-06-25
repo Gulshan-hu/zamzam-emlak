@@ -6,6 +6,17 @@ import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { FileText, CheckCircle, Clock, Package as PackageIcon, AlertTriangle } from 'lucide-react'
 
+interface RecentListing {
+  id: string
+  title: string
+  status: 'ACTIVE' | 'PENDING' | 'REJECTED'
+  views: number
+  createdAt: Date
+  user: {
+    name: string | null
+  }
+}
+
 export default async function AgencyDashboardPage() {
   const user = await getServerUser()
 
@@ -22,7 +33,7 @@ export default async function AgencyDashboardPage() {
   const stats = await getAgencyStats(agency.id)
   const activePackage = agency.packages[0]
 
-  const recentListings = await prisma.listing.findMany({
+  const recentListings: RecentListing[] = await prisma.listing.findMany({
     where: { agencyId: agency.id },
     orderBy: { createdAt: 'desc' },
     take: 5,
