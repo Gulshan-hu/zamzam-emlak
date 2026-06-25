@@ -142,7 +142,7 @@ export async function getRecentActivity(): Promise<
     ])
 
     const activity = [
-      ...recentListings.map((listing) => ({
+      ...recentListings.map((listing: (typeof recentListings)[number]) => ({
         id: listing.id,
         type: listing.status === 'ACTIVE' ? 'listing_approved' : 'listing_rejected',
         description:
