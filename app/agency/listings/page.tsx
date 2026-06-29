@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Edit, Trash2, ExternalLink } from 'lucide-react'
+import { Edit, ExternalLink } from 'lucide-react'
 import { DeleteListingButton } from '@/components/dashboard/DeleteListingButton'
 
 export const dynamic = 'force-dynamic'

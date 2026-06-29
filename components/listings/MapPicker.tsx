@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback } from "react";
 import { MapPin, Search } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -44,10 +44,11 @@ function MapEvents({
 }: {
   onMapClick: (lat: number, lng: number) => void;
 }) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useMapEvents } = require('react-leaflet');
 
   useMapEvents({
-    click: (e: any) => {
+    click: (e: { latlng: { lat: number; lng: number } }) => {
       onMapClick(e.latlng.lat, e.latlng.lng);
     },
   });

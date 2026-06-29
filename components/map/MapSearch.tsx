@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Search, List, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { RadiusSelector } from '@/components/map/RadiusSelector'
@@ -63,10 +63,11 @@ function MapEvents({
 }: {
   onMapClick: (lat: number, lng: number) => void
 }) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useMapEvents } = require('react-leaflet');
 
   useMapEvents({
-    click: (e: any) => {
+    click: (e: { latlng: { lat: number; lng: number } }) => {
       onMapClick(e.latlng.lat, e.latlng.lng)
     },
   })
@@ -177,11 +178,13 @@ export function MapSearch() {
                 <Popup>
                   <div className="space-y-2">
                     {listing.imageUrl && (
-                      <img
-                        src={listing.imageUrl}
-                        alt={listing.title}
-                        className="h-32 w-full rounded-lg object-cover"
-                      />
+                      <div className="h-32 w-full overflow-hidden rounded-lg">
+                        <img
+                          src={listing.imageUrl}
+                          alt={listing.title}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
                     )}
                     <h3 className="text-sm font-semibold">{listing.title}</h3>
                     <p className="text-sm font-bold text-primary">

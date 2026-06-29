@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { House, Menu, X, User, LogOut, LayoutDashboard, Home as HomeIcon, Building2, Map, Sparkles, BarChart3, Bookmark, ShieldCheck } from "lucide-react";
+import { House, Menu, X, LogOut, LayoutDashboard, Home as HomeIcon, Building2, Map, Bookmark, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { Button } from "@/components/ui/Button";
@@ -101,8 +101,6 @@ export function Header() {
     { href: "/", label: t("home"), icon: HomeIcon },
     { href: "/listings", label: t("listings"), icon: Building2 },
     { href: "/map", label: t("map"), icon: Map },
-    { href: "/ai-search", label: t("aiSearch"), icon: Sparkles },
-    { href: "/ai-analysis", label: t("aiAnalysis"), icon: BarChart3 },
   ];
 
   return (
