@@ -108,14 +108,9 @@ export function ListingCard({ listing }: ListingCardProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-2">
-          <Link href={`/listings/${listing.slug}`} className="flex-1">
-            <Button variant="ghost" className="w-full">
-              Baxış
-            </Button>
-          </Link>
-          <Link href={`/listings/${listing.slug}#ai-analysis`} className="flex-1">
-            <Button variant="secondary" className="w-full">
-              AI Analiz
+          <Link href={`/listings/${listing.slug}`} className="w-full">
+            <Button variant="primary" className="w-full">
+              Ətraflı bax
             </Button>
           </Link>
         </div>

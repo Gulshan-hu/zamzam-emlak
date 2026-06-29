@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
@@ -7,25 +8,46 @@ export async function GET(request: Request) {
   const next = requestUrl.searchParams.get('next')
 
   if (code) {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const cookieStore = await cookies()
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // Ignore if cookies can't be set
+            }
+          },
+        },
+      }
+    )
+
+    // Exchange code for session
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
+      console.error('OAuth callback error:', error)
       return NextResponse.redirect(
         `${requestUrl.origin}/auth/login?error=${encodeURIComponent(error.message)}`
       )
     }
 
-    // Get user after successful code exchange
-    const { data: { user } } = await supabase.auth.getUser()
-
-    // OAuth sign-in successful - redirect to dashboard or custom next URL
-    if (user) {
+    // Successful code exchange - user is now authenticated
+    if (data?.session) {
       const redirectTo = next || '/dashboard'
       return NextResponse.redirect(`${requestUrl.origin}${redirectTo}`)
     }
   }
 
-  // Fallback - redirect to login if no code or session
+  // No code or failed to establish session - redirect to login
   return NextResponse.redirect(`${requestUrl.origin}/auth/login`)
 }

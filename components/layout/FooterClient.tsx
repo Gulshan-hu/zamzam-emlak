@@ -11,9 +11,7 @@ export function FooterClient() {
   const quickLinks = [
     { href: "/listings", label: t("listings") },
     { href: "/map", label: t("map") },
-    { href: "/ai-search", label: t("aiSearch") },
-    { href: "/ai-analysis", label: t("aiAnalysis") },
-    { href: "/add-listing", label: t("addListing") },
+    { href: "/listings/new", label: t("addListing") },
   ];
 
   return (
